@@ -1,0 +1,8 @@
+{
+	"scripts": {
+		"precommit": "lint-staged"
+	},
+	"devDependencies": {
+		"lint-staged": "^13.0.4"
+	}
+}
