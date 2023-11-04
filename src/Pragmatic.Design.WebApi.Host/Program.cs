@@ -1,22 +1,18 @@
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using AutoMapper;
 using FastEndpoints;
 using FastEndpoints.ClientGen;
 using FastEndpoints.Swagger;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.FeatureManagement;
 using Pragmatic.Design.Core;
 using Pragmatic.Design.Core.Abstractions;
-using Pragmatic.Design.Core.Abstractions.Domain;
 using Pragmatic.Design.Core.Bootstrap;
-using Pragmatic.Design.Core.Exceptions;
 using Pragmatic.Design.Core.Infrastructure;
-using Pragmatic.Design.Core.Mappings;
-using Pragmatic.Design.Core.Mediator;
 using Pragmatic.Design.Core.Persistence;
+using Pragmatic.Design.DataProcessor;
+using Pragmatic.Design.DataProcessor.Fixture;
+using Pragmatic.Design.DataProcessor.Seeds;
+using Pragmatic.Design.WebApi.Host.Examples.DataProcessor;
 using Serilog;
 using WatchDog;
 
@@ -31,7 +27,7 @@ try
         !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("HOME")) && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
 
     // Load necessary assemblies
-    Assembly.Load("Pragmatic.Design.ExampleApp");
+    Assembly.Load("Pragmatic.Design.WebApi.Host");
     var allAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
 
     allAssemblies.RemoveAll(
@@ -76,12 +72,16 @@ try
 
     // Add Entity Framework DbContext
     builder.Services.AddDbContext<ApplicationDbContext>(
-        options => options.UseSqlServer(builder.Configuration.GetConnectionString("Database"), opt => opt.MigrationsAssembly(typeof(Program).Assembly.FullName))
+        options => options.UseNpgsql(builder.Configuration.GetConnectionString("Database"), opt => opt.MigrationsAssembly(typeof(Program).Assembly.FullName))
     );
 
     // Register core services and configure DI discovery
     builder.RegisterCore();
     Startup.ConfigureDIDiscovery(builder, allAssemblies);
+
+    builder.Services.AddScoped<ISeed, ExampleSeed>();
+    builder.Services.AddScoped<IFixture, ExampleSqlFixture>();
+    builder.Services.AddDataProcessor(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Examples", "DataProcessor"));
 
     // Build the application
     var app = builder.Build();
@@ -154,5 +154,4 @@ catch (Exception ex)
     app.Run();
 }
 
-// Partial class declaration for Program
 public partial class Program { }
