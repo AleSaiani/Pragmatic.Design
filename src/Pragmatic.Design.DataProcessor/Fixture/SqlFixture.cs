@@ -18,19 +18,10 @@ public abstract class SqlFixture : IFixture
 
     public async Task Apply()
     {
-        if (await HasAlreadyBeenApplied())
-        {
-            return;
-        }
         var filePath = GetFilePath();
 
         var sql = File.ReadAllText(filePath);
         await dbContext.Database.ExecuteSqlRawAsync(sql);
-    }
-
-    protected virtual Task<bool> HasAlreadyBeenApplied()
-    {
-        return Task.FromResult(false);
     }
 
     private string GetFilePath()
