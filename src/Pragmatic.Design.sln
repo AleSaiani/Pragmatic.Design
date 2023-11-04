@@ -32,6 +32,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pragmatic.Design.Core.VNext
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pragmatic.Design.SourceGenerators", "Pragmatic.Design.SourceGenerators\Pragmatic.Design.SourceGenerators.csproj", "{E5FD5300-8019-42D2-8F90-60D198632B39}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pragmatic.Design.DataProcessor", "Pragmatic.Design.DataProcessor\Pragmatic.Design.DataProcessor.csproj", "{C041005F-2AF7-4CD7-AE01-A6553FE10ACC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{E5FD5300-8019-42D2-8F90-60D198632B39}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5FD5300-8019-42D2-8F90-60D198632B39}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5FD5300-8019-42D2-8F90-60D198632B39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C041005F-2AF7-4CD7-AE01-A6553FE10ACC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C041005F-2AF7-4CD7-AE01-A6553FE10ACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C041005F-2AF7-4CD7-AE01-A6553FE10ACC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C041005F-2AF7-4CD7-AE01-A6553FE10ACC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,6 +75,7 @@ Global
 		{1A6B2829-EC1C-4C54-8EAC-3537D19312B3} = {F8BA1A8C-16D3-466D-8D6C-61512E543E93}
 		{46FA2FE2-2B56-4EBD-9301-E5D80DE3ACB8} = {F8BA1A8C-16D3-466D-8D6C-61512E543E93}
 		{E5FD5300-8019-42D2-8F90-60D198632B39} = {F8BA1A8C-16D3-466D-8D6C-61512E543E93}
+		{C041005F-2AF7-4CD7-AE01-A6553FE10ACC} = {F8BA1A8C-16D3-466D-8D6C-61512E543E93}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9C56AD60-ED18-4923-83D4-5F1026946D66}

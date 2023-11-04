@@ -52,6 +52,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pragmatic.Design.Core\Pragmatic.Design.Core.csproj" />
+    <ProjectReference Include="..\Pragmatic.Design.DataProcessor\Pragmatic.Design.DataProcessor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Examples\DataProcessor\ExampleSqlFixture.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
