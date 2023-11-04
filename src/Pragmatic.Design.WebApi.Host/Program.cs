@@ -69,11 +69,9 @@ try
         {
             opt.IsAutoClear = true;
         });
-
+    var connectionString = builder.Configuration.GetConnectionString("Database");
     // Add Entity Framework DbContext
-    builder.Services.AddDbContext<ApplicationDbContext>(
-        options => options.UseNpgsql(builder.Configuration.GetConnectionString("Database"), opt => opt.MigrationsAssembly(typeof(Program).Assembly.FullName))
-    );
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString, opt => opt.MigrationsAssembly(typeof(Program).Assembly.FullName)));
 
     // Register core services and configure DI discovery
     builder.RegisterCore();
@@ -81,7 +79,7 @@ try
 
     builder.Services.AddScoped<ISeed, ExampleSeed>();
     builder.Services.AddScoped<IFixture, ExampleSqlFixture>();
-    builder.Services.AddDataProcessor(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Examples", "DataProcessor"));
+    builder.Services.AddDataProcessor(connectionString, Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Examples", "DataProcessor"));
 
     // Build the application
     var app = builder.Build();

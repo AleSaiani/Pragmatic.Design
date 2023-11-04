@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Pragmatic.Design.DataProcessor.Fixture;
+using Pragmatic.Design.DataProcessor.Persistence;
 using Pragmatic.Design.DataProcessor.Seeds;
 
 namespace Pragmatic.Design.DataProcessor;
@@ -21,6 +23,8 @@ public class DataProcessorJob : IHostedService
     {
         using (var scope = serviceProvider.CreateScope())
         {
+            await scope.ServiceProvider.GetRequiredService<DataProcessorDbContext>().Database.MigrateAsync();
+
             var dataProcessorJobStartTime = DateTimeOffset.UtcNow;
             try
             {

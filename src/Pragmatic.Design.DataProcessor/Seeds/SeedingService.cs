@@ -7,20 +7,20 @@ internal class SeedingService
 {
     private readonly ILogger logger;
     private readonly IEnumerable<ISeed> seeds;
-    private readonly IDataProcessorTaskStore store;
+    private readonly IDataProcessorTaskStore taskStore;
 
-    public SeedingService(ILogger<SeedingService> logger, IEnumerable<ISeed> seeds, IDataProcessorTaskStore store)
+    public SeedingService(ILogger<SeedingService> logger, IEnumerable<ISeed> seeds, IDataProcessorTaskStore taskStore)
     {
         this.logger = logger;
         this.seeds = seeds;
-        this.store = store;
+        this.taskStore = taskStore;
     }
 
     public async Task Execute(DateTimeOffset dataProcessorJobStartTime)
     {
         var seedsInOrder = SeedingDependencyAttribute.OrderByDependencies(seeds);
 
-        var executedSeeds = await store.GetExecutedTasks(TaskType.Seed);
+        var executedSeeds = await taskStore.GetExecuted(TaskType.Seed);
 
         foreach (var seed in seedsInOrder)
         {
@@ -33,14 +33,14 @@ internal class SeedingService
 
             try
             {
-                await store.AddTaskExecution(taskInfo);
+                await taskStore.AddExecution(taskInfo);
                 await seed.Seed();
-                await store.SetTaskSuccedeed(taskInfo);
+                await taskStore.SetSucceeded(taskInfo);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error executing seed {Name}", seed.GetType().Name);
-                await store.SetTaskFailed(taskInfo);
+                logger.LogError(ex, $"Error executing seed {seed.GetType().Name}");
+                await taskStore.SetFailed(taskInfo, ex);
             }
         }
     }
