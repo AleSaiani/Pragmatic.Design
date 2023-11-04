@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dapper;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Pragmatic.Design.DataProcessor.Fixture;
 using Pragmatic.Design.DataProcessor.Seeds;
 
@@ -8,8 +10,8 @@ internal interface IDataProcessorTaskStore
 {
     public Task<IEnumerable<string>> GetExecutedTasks(TaskType taskType);
     public Task AddTaskExecution(TaskInfo taskInfo);
-    public Task SetTaskSucceeded(TaskInfo taskInfo);
-    public Task SetTaskFailed(TaskInfo taskInfo, Exception e);
+    public Task SetTaskSucceded(TaskInfo taskInfo);
+    public Task SetTaskFailed(TaskInfo taskInfo);
 }
 
 record TaskInfo
@@ -37,45 +39,124 @@ internal enum TaskType
     Seed
 }
 
-class DataProcessorTaskStore
+class DapperDataProcessorTaskStore : IDataProcessorTaskStore
 {
-    readonly DbContext migrationsDbContext;
+    //readonly DbContext migrationsDbContext;
 
-    public DataProcessorTaskStore(DbContext dbContext)
+    //public DataProcessorTaskStore(DbContext dbContext)
+    //{
+    //    this.migrationsDbContext = dbContext;
+    //}
+
+    //public async Task<IEnumerable<string>> GetExecutedTasks(TaskType taskType)
+    //{
+    //    var executedTasks = await migrationsDbContext.Set<TaskExecution>().Where(te => te.State == TaskExecutionState.Succeeded).Select(te => te.Name).ToListAsync();
+    //    return executedTasks;
+    //}
+
+    //public async Task AddTaskExecution(TaskInfo taskInfo)
+    //{
+    //    var execution = new TaskExecution(taskInfo);
+    //    await migrationsDbContext.AddAsync(execution);
+    //    await migrationsDbContext.SaveChangesAsync();
+    //}
+
+    //public async Task SetTaskSucceeded(TaskInfo taskInfo)
+    //{
+    //    var execution = await migrationsDbContext
+    //        .Set<TaskExecution>()
+    //        .Where(m => m.DataProcessorJobStartTime == taskInfo.DataProcessorJobStartTime && m.Name == taskInfo.Name)
+    //        .SingleAsync();
+    //    execution.SetSucceeded();
+    //    await migrationsDbContext.SaveChangesAsync();
+    //}
+
+    //public async Task SetTaskFailed(TaskInfo taskInfo, Exception e)
+    //{
+    //    var execution = await migrationsDbContext
+    //        .Set<TaskExecution>()
+    //        .Where(m => m.DataProcessorJobStartTime == taskInfo.DataProcessorJobStartTime && m.Name == taskInfo.Name)
+    //        .SingleAsync();
+    //    execution.SetFailed(e);
+    //    await migrationsDbContext.SaveChangesAsync();
+    //}
+
+    const string schema = "data";
+    const string taskExecutionTable = $"{schema}.{nameof(TaskExecution)}";
+
+    private readonly NpgsqlConnection connection;
+
+    public DapperDataProcessorTaskStore()
     {
-        this.migrationsDbContext = dbContext;
+        connection = new NpgsqlConnection(CONNECTION_STRING);
+        connection.Open();
     }
-
     public async Task<IEnumerable<string>> GetExecutedTasks(TaskType taskType)
     {
-        var executedTasks = await migrationsDbContext.Set<TaskExecution>().Where(te => te.State == TaskExecutionState.Succeeded).Select(te => te.Name).ToListAsync();
-        return executedTasks;
+        string sqlCommand = $"SELECT Name FROM {taskExecutionTable} WHERE State = \"{TaskExecutionState.Succeeded}\";";
+
+        return await connection.QueryAsync<string>(sqlCommand);
     }
 
     public async Task AddTaskExecution(TaskInfo taskInfo)
     {
-        var execution = new TaskExecution(taskInfo);
-        await migrationsDbContext.AddAsync(execution);
-        await migrationsDbContext.SaveChangesAsync();
-    }
+        string sqlCommand = $"INSERT INTO {taskExecutionTable} (Name, Type, DataProcessorJobStartTime) VALUES (@Name, @Type, @DataProcessorJobStartTime);";
 
-    public async Task SetTaskSucceeded(TaskInfo taskInfo)
-    {
-        var execution = await migrationsDbContext
-            .Set<TaskExecution>()
-            .Where(m => m.DataProcessorJobStartTime == taskInfo.DataProcessorJobStartTime && m.Name == taskInfo.Name)
-            .SingleAsync();
-        execution.SetSucceeded();
-        await migrationsDbContext.SaveChangesAsync();
+        var queryArgs = new
+        {
+            taskInfo.Name,
+            taskInfo.Type,
+            taskInfo.DataProcessorJobStartTime,
+        };
+
+        await connection.ExecuteAsync(sqlCommand, queryArgs);
     }
 
     public async Task SetTaskFailed(TaskInfo taskInfo, Exception e)
     {
-        var execution = await migrationsDbContext
-            .Set<TaskExecution>()
-            .Where(m => m.DataProcessorJobStartTime == taskInfo.DataProcessorJobStartTime && m.Name == taskInfo.Name)
-            .SingleAsync();
-        execution.SetFailed(e);
-        await migrationsDbContext.SaveChangesAsync();
+        string sqlCommand = $"UPDATE {taskExecutionTable} SET State = @State, EndedAt = @EndedAt, Error = @Error WHERE DataProcessorJobStartTime = @DataProcessorJobStartTime AND Name = @Name;";
+
+        var queryArgs = new
+        {
+            State = TaskExecutionState.Failed,
+            EndedAt = DateTimeOffset.UtcNow,
+            Error = e.ToString(),
+            taskInfo.DataProcessorJobStartTime,
+            taskInfo.Name,
+        };
+
+        await connection.ExecuteAsync(sqlCommand, queryArgs);
+    }
+
+    public async Task SetTaskSucceded(TaskInfo taskInfo)
+    {
+        string sqlCommand = $"UPDATE {taskExecutionTable} SET State = @State, EndedAt = @EndedAt WHERE DataProcessorJobStartTime = @DataProcessorJobStartTime AND Name = @Name;";
+
+        var queryArgs = new
+        {
+            State = TaskExecutionState.Succeeded,
+            EndedAt = DateTimeOffset.UtcNow,
+            taskInfo.DataProcessorJobStartTime,
+            taskInfo.Name,
+        };
+
+        await connection.ExecuteAsync(sqlCommand, queryArgs);
+    }
+
+    private void EnsureTableExists()
+    {
+        var sqlCommand = $"CREATE TABLE IF NOT EXISTS {taskExecutionTable} (" +
+            $"{nameof(TaskExecution.Id)} varchar(256)" +
+            $"{nameof(TaskExecution.TaskType)} varchar(32)" +
+            $"{nameof(TaskExecution.Name)} varchar(256)" +
+            $"{nameof(TaskExecution.DataProcessorJobStartTime)} timestamptz" +
+            $"{nameof(TaskExecution.StartedAt)} timestamptz" +
+            $"{nameof(TaskExecution.State)} varchar(32)" +
+            $"{nameof(TaskExecution.EndedAt)} timestamptz" +
+            $"{nameof(TaskExecution.Error)} text" +
+            $" PRIMARY KEY ({nameof(TaskExecution.Id)}))";
+
+        connection.ExecuteAsync(sqlCommand);
+
     }
 }
